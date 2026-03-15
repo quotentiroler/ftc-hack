@@ -136,15 +136,8 @@ app.post('/api/scan', async (c) => {
 
     // Primary results = first model (for backward compat)
     const primary = modelResults[0];
-    const modelResilience = primary?.overallScore ?? 0;
+    const overallScore = primary?.overallScore ?? 0;
     const results = primary?.results ?? [];
-
-    // Composite score: blend model resilience with prompt strength
-    const { calculateCompositeScore } = await import('./lib/scoring');
-    const promptStrength = inputAnalysis.promptQuality.promptStrength;
-    const overallScore = calculateCompositeScore(
-      modelResilience, promptStrength, inputAnalysis.promptQuality.quality,
-    );
 
     // Generate scan ID
     const id = crypto.randomUUID();
