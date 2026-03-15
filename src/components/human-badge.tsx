@@ -12,10 +12,10 @@ export const HumanBadge: FC<{ verified: boolean; scanId?: string }> = ({ verifie
     );
   }
   return (
-    <a href={scanId ? `/verify/${scanId}` : '#'} class="human-badge unverified">
-      <span class="human-badge-icon">👤</span>
-      <span>Attest as Human</span>
-      <span class="human-badge-sub">Prove you reviewed this evaluation</span>
+    <a href={scanId ? `/verify/${scanId}` : '#'} class="human-badge unverified human-badge-pulse">
+      <span class="human-badge-icon">🔐</span>
+      <span>Not yet human-verified</span>
+      <span class="human-badge-sub">Click to attest with ZK proof →</span>
     </a>
   );
 };

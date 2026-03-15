@@ -58,16 +58,29 @@ export const VerifyPage: FC<{ scan: ScanResult }> = ({ scan }) => (
               </div>
 
               <div class="verify-widget">
-                <div class="widget-placeholder">
-                  <p class="widget-label">human.tech Verification Widget</p>
+                <div class="widget-placeholder verify-widget-enhanced">
+                  <div class="verify-fingerprint">
+                    <svg viewBox="0 0 80 80" width="64" height="64" class="fingerprint-svg">
+                      <circle cx="40" cy="40" r="30" fill="none" stroke="#E8733A" stroke-width="2" stroke-dasharray="6 4" class="fp-ring fp-ring-1" />
+                      <circle cx="40" cy="40" r="22" fill="none" stroke="#E8733A" stroke-width="2" stroke-dasharray="4 6" class="fp-ring fp-ring-2" />
+                      <circle cx="40" cy="40" r="14" fill="none" stroke="#E8733A" stroke-width="2" class="fp-ring fp-ring-3" />
+                      <circle cx="40" cy="40" r="4" fill="#22c55e" class="fp-core" />
+                    </svg>
+                    <div class="verify-scan-line"></div>
+                  </div>
+                  <p class="widget-label">human.tech ZK Proof-of-Personhood</p>
                   <p class="text-muted text-sm">
-                    In production, the human.tech SDK loads here. For this demo, click below to simulate verification.
+                    Zero-knowledge identity verification — no biometrics stored, no data shared.
                   </p>
-                  <form method="post" action={`/api/verify/${scan.id}`}>
-                    <button type="submit" class="btn btn-primary btn-lg">
-                      🔐 Verify as Human (Demo)
+                  <form method="post" action={`/api/verify/${scan.id}`} id="verify-form">
+                    <button type="submit" class="btn btn-primary btn-lg verify-btn">
+                      <span class="verify-btn-icon">🔐</span>
+                      <span>Generate ZK Proof &amp; Attest</span>
                     </button>
                   </form>
+                  <p class="text-muted" style="font-size:0.75rem;margin-top:0.8rem;opacity:0.5;">
+                    Demo mode — simulates human.tech SDK verification flow
+                  </p>
                 </div>
               </div>
 

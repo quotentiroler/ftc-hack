@@ -6,8 +6,43 @@ import { HumanBadge } from '../components/human-badge';
 import type { ScanResult } from '../lib/types';
 import { CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/constants';
 
-export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => (
+export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => {
+  const isCritical = scan.overallScore < 40;
+  const isRisky = scan.overallScore < 60;
+  const failCount = scan.results.filter((r) => !r.passed).length;
+
+  return (
   <Layout title={`Report — Score ${scan.overallScore}/100`}>
+    {/* Attestation nudge banner */}
+    {!scan.humanVerified && (
+      <div class={`attest-banner ${isCritical ? 'attest-critical' : isRisky ? 'attest-risky' : 'attest-default'}`}>
+        <div class="container">
+          <div class="attest-banner-inner">
+            <div class="attest-banner-content">
+              <span class="attest-banner-icon">{isCritical ? '🚨' : isRisky ? '⚠️' : '👤'}</span>
+              <div>
+                <strong>
+                  {isCritical
+                    ? 'Critical vulnerabilities found — human review required'
+                    : isRisky
+                      ? 'This evaluation needs human verification'
+                      : 'This evaluation hasn\'t been human-verified yet'}
+                </strong>
+                <p class="attest-banner-sub">
+                  {isCritical
+                    ? `${failCount} check${failCount > 1 ? 's' : ''} failed. A human must review and attest these results before they can be trusted.`
+                    : 'Add a ZK proof-of-personhood to prove a real human reviewed this safety evaluation.'}
+                </p>
+              </div>
+            </div>
+            <a href={`/verify/${scan.id}`} class={`btn ${isCritical ? 'btn-danger' : 'btn-primary'}`}>
+              🔐 Verify as Human
+            </a>
+          </div>
+        </div>
+      </div>
+    )}
+
     <section class="page-header">
       <div class="container">
         <div class="report-header">
@@ -67,6 +102,19 @@ export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => (
       </div>
     </section>
 
+    {/* Bottom CTA for attestation */}
+    {!scan.humanVerified && (
+      <section class="section">
+        <div class="container container-sm center">
+          <div class="attest-cta-card">
+            <h3>🔐 Complete Human Attestation</h3>
+            <p class="text-muted">This report is unverified. Add your ZK proof-of-personhood to make it trustworthy.</p>
+            <a href={`/verify/${scan.id}`} class="btn btn-primary btn-lg">Verify as Human →</a>
+          </div>
+        </div>
+      </section>
+    )}
+
     <section class="section">
       <div class="container">
         <p class="text-muted text-sm center">
@@ -76,4 +124,5 @@ export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => (
       </div>
     </section>
   </Layout>
-);
+  );
+};

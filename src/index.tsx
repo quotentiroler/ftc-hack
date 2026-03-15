@@ -123,11 +123,13 @@ app.post('/api/scan', async (c) => {
       .run();
 
     // Return JSON for fetch requests, redirect for normal form POSTs
+    // Auto-redirect to verify page for critical/risky scans (<60) to nudge attestation
+    const destination = overallScore < 60 ? `/verify/${id}` : `/report/${id}`;
     const wantsJson = (c.req.header('accept') ?? '').includes('application/json');
     if (wantsJson) {
-      return c.json({ id, redirectUrl: `/report/${id}`, overallScore });
+      return c.json({ id, redirectUrl: destination, overallScore });
     }
-    return c.redirect(`/report/${id}`);
+    return c.redirect(destination);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('Scan error:', msg);
