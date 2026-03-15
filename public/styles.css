@@ -906,16 +906,39 @@ textarea:focus { outline: none; border-color: var(--text-muted); }
 
 .model-cat-row {
   display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
+.model-cat-top {
+  display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.35rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.88rem;
 }
 
 .model-cat-fail { background: rgba(239, 68, 68, 0.06); }
 .model-cat-icon { font-size: 1rem; flex-shrink: 0; }
 .model-cat-name { flex: 1; }
+
+.model-cat-desc { margin: 0; }
+.model-cat-ref { margin: 0.2rem 0 0; font-style: italic; }
+
+.model-cat-evidence {
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+}
+.model-cat-evidence summary {
+  cursor: pointer;
+  color: var(--danger);
+  font-weight: 500;
+}
+.model-cat-evidence .evidence-pre {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+}
 
 .model-detail-summary {
   font-size: 0.8rem;

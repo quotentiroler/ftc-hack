@@ -115,14 +115,24 @@ const PerModelDetail: FC<{ mr: ModelResult }> = ({ mr }) => {
         </span>
       </div>
 
-      {/* Per-category bars */}
+      {/* Per-category rows with evidence */}
       <div class="model-detail-cats">
         {mr.results.map((r) => (
           <div class={`model-cat-row ${r.passed ? '' : 'model-cat-fail'}`} key={r.category}>
-            <span class="model-cat-icon">{CATEGORY_ICONS[r.category] ?? '🔍'}</span>
-            <span class="model-cat-name">{CATEGORY_LABELS[r.category] ?? r.name}</span>
-            <PassFailBadge passed={r.passed} />
-            {!r.passed && <ScoreBadge severity={r.severity} />}
+            <div class="model-cat-top">
+              <span class="model-cat-icon">{CATEGORY_ICONS[r.category] ?? '🔍'}</span>
+              <span class="model-cat-name">{CATEGORY_LABELS[r.category] ?? r.name}</span>
+              <PassFailBadge passed={r.passed} />
+              {!r.passed && <ScoreBadge severity={r.severity} />}
+            </div>
+            <p class="model-cat-desc text-muted text-sm">{r.description}</p>
+            {!r.passed && r.evidence && r.evidence !== 'No probes triggered.' && (
+              <details class="model-cat-evidence" open>
+                <summary>Evidence — {r.evidence.split('---').length} probe(s) triggered</summary>
+                <pre class="evidence-pre">{r.evidence}</pre>
+              </details>
+            )}
+            {r.reference && <p class="model-cat-ref text-muted text-xs">{r.reference}</p>}
           </div>
         ))}
       </div>
@@ -136,15 +146,19 @@ const PerModelDetail: FC<{ mr: ModelResult }> = ({ mr }) => {
 
 // --- Main Report ---
 export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => {
+  // Aggregate results from ALL models (not just the primary)
+  const allResults: CheckResult[] = scan.modelResults && scan.modelResults.length > 0
+    ? scan.modelResults.flatMap((mr) => mr.results.map((r) => ({ ...r, _modelName: mr.modelName })))
+    : scan.results;
   const isCritical = scan.overallScore < 40;
   const isRisky = scan.overallScore < 60;
-  const failCount = scan.results.filter((r) => !r.passed).length;
+  const failCount = allResults.filter((r) => !r.passed).length;
   const promptStrength = scan.inputAnalysis?.promptQuality.promptStrength ?? 0;
-  const modelResilience = scan.modelResults?.[0]?.overallScore ?? scan.overallScore;
   const hasMultiModel = (scan.modelResults?.length ?? 0) > 1;
+  const singleModelScore = !hasMultiModel ? (scan.modelResults?.[0]?.overallScore ?? scan.overallScore) : 0;
 
   return (
-  <Layout title={`Report — Score ${scan.overallScore}/100`}>
+  <Layout title={hasMultiModel ? `Multi-Model Report — AEGIS` : `Report — Score ${singleModelScore}/100`}>
     {/* Attestation nudge banner */}
     {!scan.humanVerified && (
       <div class={`attest-banner ${isCritical ? 'attest-critical' : isRisky ? 'attest-risky' : 'attest-default'}`}>
@@ -183,30 +197,52 @@ export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => {
             <p class="text-muted mono">ID: {scan.id}</p>
             <p class="text-muted">Scanned: {scan.createdAt}</p>
           </div>
-          <ScoreRing score={scan.overallScore} />
+          {!hasMultiModel && <ScoreRing score={singleModelScore} />}
+          {hasMultiModel && (
+            <div style="text-align:center;">
+              <p class="text-muted" style="margin:0;font-size:0.95rem;">🏁 {scan.modelResults!.length} models tested</p>
+            </div>
+          )}
         </div>
 
-        {/* Dual score breakdown */}
-        <div class="dual-score-strip">
-          <div class="dual-score-item">
-            <div class="dual-score-bar-track">
-              <div class="dual-score-bar-fill" style={`width:${modelResilience}%;background:${getScoreColor(modelResilience)}`} />
+        {/* Dual score breakdown — single model only */}
+        {!hasMultiModel && (
+          <div class="dual-score-strip">
+            <div class="dual-score-item">
+              <div class="dual-score-bar-track">
+                <div class="dual-score-bar-fill" style={`width:${singleModelScore}%;background:${getScoreColor(singleModelScore)}`} />
+              </div>
+              <div class="dual-score-meta">
+                <span class="dual-score-label">🤖 Model Resilience</span>
+                <span class="dual-score-value" style={`color:${getScoreColor(singleModelScore)}`}>{singleModelScore}</span>
+              </div>
             </div>
-            <div class="dual-score-meta">
-              <span class="dual-score-label">🤖 Model Resilience</span>
-              <span class="dual-score-value" style={`color:${getScoreColor(modelResilience)}`}>{modelResilience}</span>
+            <div class="dual-score-item">
+              <div class="dual-score-bar-track">
+                <div class="dual-score-bar-fill" style={`width:${promptStrength}%;background:${getScoreColor(promptStrength)}`} />
+              </div>
+              <div class="dual-score-meta">
+                <span class="dual-score-label">📝 Prompt Strength</span>
+                <span class="dual-score-value" style={`color:${getScoreColor(promptStrength)}`}>{promptStrength}</span>
+              </div>
             </div>
           </div>
-          <div class="dual-score-item">
-            <div class="dual-score-bar-track">
-              <div class="dual-score-bar-fill" style={`width:${promptStrength}%;background:${getScoreColor(promptStrength)}`} />
-            </div>
-            <div class="dual-score-meta">
-              <span class="dual-score-label">📝 Prompt Strength</span>
-              <span class="dual-score-value" style={`color:${getScoreColor(promptStrength)}`}>{promptStrength}</span>
+        )}
+
+        {/* Prompt Strength bar — multi-model */}
+        {hasMultiModel && (
+          <div class="dual-score-strip">
+            <div class="dual-score-item">
+              <div class="dual-score-bar-track">
+                <div class="dual-score-bar-fill" style={`width:${promptStrength}%;background:${getScoreColor(promptStrength)}`} />
+              </div>
+              <div class="dual-score-meta">
+                <span class="dual-score-label">📝 Prompt Strength</span>
+                <span class="dual-score-value" style={`color:${getScoreColor(promptStrength)}`}>{promptStrength}</span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
 
@@ -223,8 +259,8 @@ export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => {
       </div>
     </section>
 
-    {/* Executive Summary */}
-    {scan.results.length > 0 && (
+    {/* Executive Summary — only for single-model scans */}
+    {!hasMultiModel && scan.results.length > 0 && (
       <section class="section">
         <div class="container">
           <ExecutiveSummary scan={scan} />
@@ -325,6 +361,8 @@ export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => {
       </section>
     )}
 
+    {/* Detailed Findings — only for single-model scans (multi-model shows evidence inline in per-model cards) */}
+    {!hasMultiModel && (
     <section class="section">
       <div class="container">
         <h2>Detailed Findings</h2>
@@ -396,6 +434,7 @@ export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => {
         )}
       </div>
     </section>
+    )}
 
     <section class="section">
       <div class="container center">

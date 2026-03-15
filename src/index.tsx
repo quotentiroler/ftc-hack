@@ -134,9 +134,12 @@ app.post('/api/scan', async (c) => {
     // Run multi-model safety checks
     const modelResults = await runMultiModelChecks(target, categories, modelIds, apiKeys);
 
-    // Primary results = first model (for backward compat)
+    // Overall score = average across all models (not just first)
+    const overallScore = modelResults.length > 0
+      ? Math.round(modelResults.reduce((sum, mr) => sum + mr.overallScore, 0) / modelResults.length)
+      : 0;
+    // Primary results for backward compat (single-model fallback)
     const primary = modelResults[0];
-    const overallScore = primary?.overallScore ?? 0;
     const results = primary?.results ?? [];
 
     // Generate scan ID
