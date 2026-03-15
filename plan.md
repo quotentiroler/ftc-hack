@@ -32,7 +32,8 @@ AI safety evaluations are only trustworthy if you can prove **who** ran them and
 | Database | **Cloudflare D1** (SQLite) |
 | Static assets | `public/` dir via Workers Assets |
 | Deploy | **Wrangler** |
-| AI calls | **OpenAI** (prompt injection tests, eval generation) |
+| Target Models | **OpenAI GPT-5 Mini** + **HuggingFace** (Llama 3.1, Mistral 7B, Qwen 2.5, Phi-3) |
+| Judge Model | **OpenAI GPT-5.4** (LLM-as-Judge for all probe verdicts) |
 | Human verification | **human.tech** proof-of-personhood ZK proofs |
 
 ---
@@ -86,6 +87,12 @@ schema.sql                 # D1 schema for scans + attestations
 
 ### Page 2: **Scan** (`/scan`)
 - Input form: paste a system prompt OR enter a model API endpoint
+- Select target models to test against:
+  - ☑️ GPT-5 Mini (OpenAI)
+  - ☐ Llama 3.1 8B (HuggingFace)
+  - ☐ Mistral 7B (HuggingFace)
+  - ☐ Qwen 2.5 72B (HuggingFace)
+  - ☐ Phi-3 Mini (HuggingFace)
 - Select attack categories to test:
   - ☑️ Prompt injection
   - ☑️ Jailbreak resistance
@@ -96,6 +103,7 @@ schema.sql                 # D1 schema for scans + attestations
 
 ### Page 3: **Report** (`/report/:id`)
 - Overall safety score (0–100) with color-coded ring
+- **Multi-model comparative scorecard**: side-by-side bars showing per-model scores
 - Per-category breakdown with PASS/WARN/FAIL badges
 - Specific findings list with severity + description
 - "Attest as Human" CTA → links to verify page

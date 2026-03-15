@@ -4,15 +4,17 @@
 
 Key information:
 
-- AEGIS scans AI system prompts for 5 categories of safety vulnerabilities
-- Each scan produces a 0-100 safety score with detailed findings
+- AEGIS scans AI system prompts against multiple models for 5 categories of safety vulnerabilities
+- Tests across OpenAI GPT-5 Mini and open-weight models (Llama 3.1 8B, Mistral 7B, Qwen 2.5 72B, Phi-3 Mini) via HuggingFace Inference API
+- GPT-5.4 serves as the LLM-as-Judge, evaluating all probe responses for consistent verdicts
+- Each scan produces a 0-100 safety score per model with a comparative scorecard
 - Human reviewers can attest results via zero-knowledge proof-of-personhood (human.tech)
 - All evaluations are transparent, auditable, and cryptographically verifiable
 
 ## Pages
 
 - [Homepage](https://aegis.dev): Overview, stats, and quick-start for running safety scans
-- [Scan](https://aegis.dev/scan): Submit a system prompt for automated safety evaluation
+- [Scan](https://aegis.dev/scan): Submit a system prompt, select target models, and run automated safety evaluation
 - [Dashboard](https://aegis.dev/dashboard): View all scans, scores, and human attestation status
 - [About](https://aegis.dev/about): Methodology, architecture, research references, and bibliography
 
@@ -28,9 +30,12 @@ Key information:
 
 - Runtime: Cloudflare Workers + D1 (SQLite)
 - Framework: Hono with JSX server-side rendering
-- Safety Engine: OpenAI API probes across 5 attack categories
+- Target Models: OpenAI GPT-5 Mini, Llama 3.1 8B, Mistral 7B, Qwen 2.5 72B, Phi-3 Mini
+- Judge Model: OpenAI GPT-5.4 (LLM-as-Judge for all probe verdicts)
+- Model Providers: OpenAI API + HuggingFace Inference API (OpenAI-compatible endpoint)
+- Safety Engine: Multi-model probes across 5 attack categories with comparative scorecard
 - Human Attestation: human.tech ZK proof-of-personhood
-- Scoring: Weighted multi-category risk assessment (0-100 scale)
+- Scoring: Weighted multi-category risk assessment (0-100 per model)
 
 ## Research References
 

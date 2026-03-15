@@ -22,23 +22,31 @@ The AI safety evaluation space has mature tools — [Promptfoo](https://github.c
 |---|---|---|---|---|---|
 | Prompt injection detection | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Jailbreak testing | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Multi-model testing | ❌ | ❌ | ❌ | ❌ | ✅ **(5 models)** |
+| Open-weight models | ❌ | ❌ | ❌ | ❌ | ✅ **(HuggingFace)** |
 | Quantitative safety score | ❌ (pass/fail) | ❌ (block/allow) | Partial | ❌ | ✅ **(0–100)** |
+| Comparative scorecard | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Human attestation (ZK) | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Web UI (zero-install) | ❌ (CLI) | ❌ (API) | Partial (hub) | ❌ (CLI) | ✅ |
 | Research-grounded checks | Partial | Proprietary | Partial | Partial | ✅ **(10 papers)** |
 
 ### The Gap We Fill
 
-1. **Cryptographic human attestation** — Every scan can be attested by a verified human via ZK proof-of-personhood. No other tool in this space ships this. The research frontier (NIST AI RMF, EU AI Act Art. 14) demands human oversight for safety evaluations — AEGIS makes it verifiable and privacy-preserving.
+1. **Multi-model comparative testing** — Test the same system prompt against GPT-5 Mini and open-weight models (Llama, Mistral, Qwen, Phi-3) in one scan. The future is on-device open-weight models — many uncensored — and AEGIS is the only tool that shows how your prompt holds up across providers with a side-by-side scorecard.
 
-2. **Composable safety scores** — Not pass/fail, not raw logs. A single 0–100 score across 5 weighted attack categories, designed for dashboards, compliance reports, and comparison over time.
+2. **Cryptographic human attestation** — Every scan can be attested by a verified human via ZK proof-of-personhood. No other tool in this space ships this. The research frontier (NIST AI RMF, EU AI Act Art. 14) demands human oversight for safety evaluations — AEGIS makes it verifiable and privacy-preserving.
 
-3. **Web-first, zero-install** — Every competitor requires `pip install`, Docker, or API keys. AEGIS is a URL. Visit, paste a prompt, get a scored report. This matters for non-engineers: compliance teams, product managers, regulators.
+3. **Composable safety scores** — Not pass/fail, not raw logs. A single 0–100 score across 5 weighted attack categories, designed for dashboards, compliance reports, and comparison over time.
+
+4. **Web-first, zero-install** — Every competitor requires `pip install`, Docker, or API keys. AEGIS is a URL. Visit, paste a prompt, get a scored report. This matters for non-engineers: compliance teams, product managers, regulators.
 
 ## Features
 
+- **Multi-Model Testing**: Test your system prompt against GPT-5 Mini, Llama 3.1 8B, Mistral 7B, Qwen 2.5 72B, and Phi-3 Mini in a single scan
 - **5 Attack Categories**: Prompt injection, jailbreak resistance, output manipulation, evaluation gaming, data exfiltration
 - **Quantitative Scoring**: 0–100 safety score with per-category breakdowns and severity ratings
+- **Comparative Scorecard**: Side-by-side per-model scores with visual bars on every report
+- **LLM-as-Judge**: GPT-5.4 evaluates all probe responses for consistent, high-quality verdicts
 - **Human Attestation**: ZK proof-of-personhood via human.tech — privacy-preserving, no biometrics shared
 - **Research-Grounded**: Every check traces back to published papers (UniGuardian, JailbreakBench, Min-K%, etc.)
 - **6 Pages**: Home, Scan, Report, Verify, Dashboard, About — clean UX with one purpose per page
@@ -52,7 +60,9 @@ The AI safety evaluation space has mature tools — [Promptfoo](https://github.c
 | Language | TypeScript |
 | Database | Cloudflare D1 (SQLite) |
 | Package Manager | Bun |
-| AI | OpenAI API (gpt-4o-mini) |
+| Target Models | OpenAI GPT-5 Mini, Llama 3.1 8B, Mistral 7B, Qwen 2.5 72B, Phi-3 Mini |
+| Judge Model | OpenAI GPT-5.4 (LLM-as-Judge) |
+| Model Providers | OpenAI API + HuggingFace Inference API |
 | Human Verification | human.tech ZK proof-of-personhood |
 
 ## Quick Start
@@ -64,9 +74,10 @@ bun install
 # Initialize the local database
 bun run db:init
 
-# Set your OpenAI API key
+# Set your API keys
 # Create a .dev.vars file:
 echo 'OPENAI_API_KEY=sk-your-key-here' > .dev.vars
+echo 'HF_TOKEN=hf_your-token-here' >> .dev.vars
 
 # Start dev server
 bun run dev
@@ -75,9 +86,20 @@ bun run dev
 ## Architecture
 
 ```
-User submits prompt → AEGIS Safety Engine → Report with scores
-5 Check Categories  → OpenAI API probes   → Risk scoring (0-100)
-Human reviewer      → human.tech ZK proof → Attested report ✓
+User submits prompt + selects models
+    ↓
+AEGIS Multi-Model Probe Engine
+    ├─ OpenAI GPT-5 Mini (via OpenAI API)
+    ├─ Llama 3.1 8B     (via HuggingFace Inference API)
+    ├─ Mistral 7B        (via HuggingFace Inference API)
+    ├─ Qwen 2.5 72B     (via HuggingFace Inference API)
+    └─ Phi-3 Mini        (via HuggingFace Inference API)
+    ↓
+GPT-5.4 LLM-as-Judge → per-probe PASS/FAIL verdicts
+    ↓
+Comparative Scorecard (0-100 per model, 5 categories)
+    ↓
+Human reviewer → human.tech ZK proof → Attested report ✓
 ```
 
 ## Safety Check Methodology
