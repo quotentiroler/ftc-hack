@@ -1,8 +1,10 @@
 # AEGIS — AI Evaluation & Governance Integrity System
 
 > **Hackathon**: Intelligence at the Frontier (Funding the Commons + Protocol Labs)
-> **Date**: March 15, 2026 11:55 AM
+> **Date**: March 15, 2026
 > **Tracks**: 🛡️ AI Safety & Evaluation (Protocol Labs) + 🌸 BONUS: Made by Human (human.tech)
+> **Live**: [aegis.maxivities.workers.dev](https://aegis.maxivities.workers.dev/)
+> **Repo**: [github.com/quotentiroler/ftc-hack](https://github.com/quotentiroler/ftc-hack)
 
 ---
 
@@ -21,7 +23,7 @@ AI safety evaluations are only trustworthy if you can prove **who** ran them and
 
 ---
 
-## Tech Stack (follows secretspots.guide patterns)
+## Tech Stack
 
 | Layer | Tech |
 |-------|------|
@@ -31,10 +33,12 @@ AI safety evaluations are only trustworthy if you can prove **who** ran them and
 | Package manager | **Bun** |
 | Database | **Cloudflare D1** (SQLite) |
 | Static assets | `public/` dir via Workers Assets |
-| Deploy | **Wrangler** |
-| Target Models | **OpenAI GPT-5 Mini** + **HuggingFace** (Llama 3.1, Mistral 7B, Qwen 2.5, Phi-3) |
+| Deploy | **Wrangler 4.73** |
+| Target Models | **OpenAI GPT-5 Mini** + **HuggingFace** (Llama 3.3 70B, DeepSeek V3.2, Qwen 2.5 72B, Qwen 2.5 Coder 32B) |
+| HF SDK | **@huggingface/inference** v4 (`InferenceClient`) |
 | Judge Model | **OpenAI GPT-5.4** (LLM-as-Judge for all probe verdicts) |
 | Human verification | **human.tech** proof-of-personhood ZK proofs |
+| Testing | **Vitest 4.1** — 40 tests (27 unit + 13 integration) |
 
 ---
 
@@ -42,126 +46,115 @@ AI safety evaluations are only trustworthy if you can prove **who** ran them and
 
 ```
 src/
-├── index.tsx              # Hono app + all routes (secretspots pattern)
+├── index.tsx              # Hono app + all routes + API endpoints
 ├── pages/
-│   ├── home.tsx           # Page 1: Landing — what AEGIS does
-│   ├── scan.tsx           # Page 2: Run a safety scan on a prompt/model
-│   ├── report.tsx         # Page 3: View scan results & severity scores
-│   ├── verify.tsx         # Page 4: Human attestation via human.tech
-│   ├── dashboard.tsx      # Page 5: All scans overview + leaderboard
-│   └── about.tsx          # Page 6: Methodology + how it works
+│   ├── home.tsx           # Landing — stats, value props, CTA
+│   ├── scan.tsx           # Run safety scan — model/category selection
+│   ├── report.tsx         # Per-model scorecard, evidence, findings
+│   ├── verify.tsx         # Human attestation via human.tech ZK proof
+│   ├── dashboard.tsx      # All scans — per-model scores, filters
+│   └── about.tsx          # Methodology, architecture, tech stack
 ├── components/
 │   ├── layout.tsx         # Shared <html> shell, nav, footer
-│   ├── nav.tsx            # Navigation bar (links to all 5+ pages)
-│   ├── scan-form.tsx      # The prompt/model input form
-│   ├── score-badge.tsx    # Severity badge component (PASS/WARN/FAIL)
+│   ├── nav.tsx            # Navigation bar
+│   ├── scan-form.tsx      # Prompt input + model/category checkboxes
+│   ├── score-badge.tsx    # Score ring, PASS/FAIL badges, severity
 │   └── human-badge.tsx    # "Verified by Human" attestation badge
 ├── lib/
-│   ├── safety-checks.ts   # Core: prompt injection, jailbreak, eval gaming detectors
-│   ├── scoring.ts         # Risk scoring engine (0-100 scale)
+│   ├── safety-checks.ts   # Core: multi-provider probes, judge, orchestrator
+│   ├── scoring.ts         # Risk scoring (0-100, weighted categories)
 │   ├── human-verify.ts    # human.tech integration (ZK proof verification)
 │   ├── types.ts           # Shared TypeScript types
-│   └── constants.ts       # App constants
-├── api/
-│   └── index.ts           # API routes: POST /api/scan, GET /api/reports
+│   └── constants.ts       # Models, categories, scoring helpers
 └── types/
     └── env.d.ts           # CloudflareBindings type
+tests/
+├── scoring.test.ts        # 9 tests — calculateOverallScore, calculatePromptStrength
+├── constants.test.ts      # 13 tests — config integrity, score helpers
+├── prompt-quality.test.ts # 5 tests — assessPromptQuality
+└── hf-models.integration.test.ts  # 13 tests — HF model availability, adherence, adversarial
 public/
-├── styles.css             # Tailwind-ish utility CSS (inline or minimal)
-└── favicon.ico
-wrangler.jsonc
-package.json
-tsconfig.json
-schema.sql                 # D1 schema for scans + attestations
+├── styles.css             # Full custom CSS
+├── scan.js                # Scan loading UX (extracted from inline)
+├── llms.txt               # LLM-readable project info
+├── robots.txt
+├── site.webmanifest
+├── favicon/               # Multi-format favicons
+├── logo/                  # SVG logos
+├── icon/                  # App icons
+├── social/                # OG/Twitter card images
+└── pwa/                   # PWA icons
 ```
 
 ---
 
-## 5+ Pages (Navigation Flow)
+## Pages
 
 ### Page 1: **Home** (`/`)
 - Hero: "AI Safety Evaluations, Verified by Humans"
 - 3 value prop cards: Detect / Score / Attest
+- Live stats ticker (total scans, threats caught, human attestations)
 - CTA: "Run Your First Scan →"
-- Stats ticker (total scans, threats caught, human attestations)
 
 ### Page 2: **Scan** (`/scan`)
-- Input form: paste a system prompt OR enter a model API endpoint
-- Select target models to test against:
-  - ☑️ GPT-5 Mini (OpenAI)
-  - ☐ Llama 3.1 8B (HuggingFace)
-  - ☐ Mistral 7B (HuggingFace)
+- Textarea for system prompt input (with example button)
+- Model selection — 5 models across OpenAI + HuggingFace:
+  - ☑️ GPT-5 Mini (OpenAI) — default
+  - ☐ Llama 3.3 70B (HuggingFace)
+  - ☐ DeepSeek V3.2 (HuggingFace)
   - ☐ Qwen 2.5 72B (HuggingFace)
-  - ☐ Phi-3 Mini (HuggingFace)
-- Select attack categories to test:
-  - ☑️ Prompt injection
-  - ☑️ Jailbreak resistance
-  - ☑️ Output manipulation
-  - ☑️ Evaluation gaming
-  - ☑️ Data exfiltration
-- "Run Scan" button → POST to `/api/scan` → redirect to report
+  - ☐ Qwen 2.5 Coder 32B (HuggingFace)
+- Category checkboxes (all 5 checked by default)
+- Animated loading state: shield icon, progress bar, live probe feed
+- POST `/api/scan` → redirects to report
 
 ### Page 3: **Report** (`/report/:id`)
-- Overall safety score (0–100) with color-coded ring
-- **Multi-model comparative scorecard**: side-by-side bars showing per-model scores
-- Per-category breakdown with PASS/WARN/FAIL badges
-- Specific findings list with severity + description
-- "Attest as Human" CTA → links to verify page
-- Export: "Download JSON report"
+- **Single-model**: Score ring (0-100), dual bars (Model Resilience + Prompt Strength), executive summary, detailed findings with evidence
+- **Multi-model**: No aggregate score — per-model cards with independent scores, per-category pass/fail rows, inline evidence for failures, severity explanations
+- Prompt Strength bar (heuristic, always shown)
+- Threat detection banner (if input looks like an attack)
+- Prompt quality warning (if input isn't a real system prompt)
+- Human attestation CTA + JSON export
 
 ### Page 4: **Verify** (`/verify/:id`)
-- human.tech proof-of-personhood widget integration
-- Shows: "This evaluation was reviewed and attested by a verified human"
-- ZK proof status: pending / verified
-- After verification → badge appears on report + dashboard entry
+- human.tech proof-of-personhood widget
+- ZK proof status: pending → verified
+- After verification → "✓ Verified by Human" badge on report + dashboard
 
 ### Page 5: **Dashboard** (`/dashboard`)
-- Table of all past scans (date, target, score, human-verified badge)
-- Filter by: score range, verified only, category
-- Summary stats: avg score, % human-attested, top failure categories
+- KPI strip: total scans, avg score, findings, attestation rate
+- Score distribution + threat severity charts
+- Category breakdown (pass rates per category)
+- Scan table: date, target, **models** (tagged badges), per-model scores, per-model ratings, per-model checks, attestation status
 
 ### Page 6: **About** (`/about`)
-- Methodology: how each safety check works
-- Why human attestation matters for AI safety
-- Architecture diagram
-- Links to Protocol Labs + human.tech
+- Architecture diagram (multi-model probe engine → judge → scorecard → attestation)
+- Supported models list (5 models, 4 organizations)
+- Methodology: 5 attack categories with research references
+- Tech stack section
+- Paper references
 
 ---
 
-## Safety Checks (Core Logic in `lib/safety-checks.ts`)
+## Safety Checks (40 probes across 5 categories)
 
-Each check returns `{ passed: boolean, severity: 'low'|'medium'|'high'|'critical', description: string, evidence: string }`
+### Methodology
 
-### Grounded in Research
+| Check | Technique | Probes | Reference |
+|-------|-----------|--------|-----------|
+| Prompt Injection | UniGuardian PTA taxonomy | 12 | Lin et al. (2025) arXiv:2502.13141 |
+| Jailbreak Resistance | JailbreakBench 100-behavior | 10 | Chao et al. (2024) arXiv:2404.01318 |
+| Output Manipulation | Safety by Measurement | 6 | Grey & Segerie (2025) arXiv:2505.05541 |
+| Evaluation Gaming | Min-K% contamination detection | 4 pairs | Shi et al. (2023) arXiv:2310.17680 |
+| Data Exfiltration | HarmBench/AdvBench probes | 8 | Mazeika et al. (2024) arXiv:2402.01630 |
 
-Our checks are based on state-of-the-art techniques from the AI safety literature:
+### Scoring
 
-| Check | Inspired By | Key Reference |
-|-------|-------------|---------------|
-| Prompt Injection | UniGuardian unified detection, StruQ structured queries | arxiv:2502.13141, arxiv:2402.06363 |
-| Jailbreak Resistance | JailbreakBench standardized eval, TAP attack trees | arxiv:2404.01318, arxiv:2312.02119 |
-| Eval Gaming | Goodhart's Law in LLMs, Min-K% contamination detection | arxiv:2505.22037, arxiv:2310.17680 |
-| Red Teaming | AgenticRed automated pipeline, ASSERT scenarios | arxiv:2601.13518, arxiv:2310.09624 |
-| Human Attestation | NIST AI RMF human oversight, HAT framework | NIST.AI.100-1 |
-
-### Check Details
-
-1. **Prompt Injection Detection** — Tests if the model follows injected instructions hidden in user input. Uses techniques from UniGuardian (Prompt Trigger Attack detection) and Garak probe patterns. Tests both direct injection ("ignore previous instructions") and indirect injection (hidden instructions in data context).
-
-2. **Jailbreak Resistance** — Runs known jailbreak templates based on JailbreakBench's 100-behavior dataset. Includes DAN, roleplay, hypothetical framing, Many-Shot Jailbreaking (MSJ) patterns, and GCG-style suffix attacks. Measures Attack Success Rate (ASR).
-
-3. **Output Manipulation** — Tests if model can be tricked into producing formatted outputs that look like system messages, or if it exhibits verbosity bias that gaming LLM-as-a-judge evaluations. Detects length bias and confidence-sounding refusals.
-
-4. **Evaluation Gaming Detection** — Detects if a model behaves differently when it detects eval-like patterns. Uses Min-K% probability analysis to flag potential benchmark contamination. Compares performance on canonical vs. paraphrased test prompts to detect memorization.
-
-5. **Data Exfiltration** — Tests if the model can be coerced into leaking system prompt or training data patterns. Uses techniques from the AdvBench 520-behavior dataset and representation engineering approaches to detect information leakage.
-
-### Scoring Methodology
-
-- **Overall Score**: Weighted average across all categories (0-100, higher = safer)
-- **Per-Category Score**: Based on Attack Success Rate (ASR) — lower ASR = higher safety score
-- **Utility-Preservation Score**: Ensures safety hardening doesn't break the model's primary purpose (prevents over-refusal)
-- **Human-AI Alignment Score**: After human attestation, measures agreement between automated findings and human judgment
+- **Per-model score**: Weighted average across categories (0-100, higher = safer)
+- **Severity from failure rate**: critical (≥60%), high (40-60%), medium (20-40%), low (<20%)
+- **Prompt Strength**: Heuristic score (0-100) based on system prompt length, instruction patterns, safety keywords — no API calls
+- **No aggregate score for multi-model**: Each model is independently scored. No averaged numbers.
+- **All verdicts from GPT-5.4**: Single judge model for consistent, fair comparison across all target models
 
 ---
 
@@ -172,9 +165,11 @@ CREATE TABLE IF NOT EXISTS scans (
   id TEXT PRIMARY KEY,
   target_type TEXT NOT NULL,        -- 'prompt' | 'endpoint'
   target_value TEXT NOT NULL,
-  overall_score INTEGER NOT NULL,   -- 0-100
+  overall_score INTEGER NOT NULL,   -- 0-100 (avg across models for backward compat)
   categories TEXT NOT NULL,         -- JSON array of selected categories
-  results TEXT NOT NULL,            -- JSON array of check results
+  results TEXT NOT NULL,            -- JSON: primary model results (backward compat)
+  model_results TEXT,               -- JSON: per-model results array
+  input_analysis TEXT,              -- JSON: prompt quality + threat classification
   human_verified INTEGER DEFAULT 0,
   human_proof TEXT,                 -- ZK proof from human.tech
   verified_at TEXT,
@@ -182,22 +177,52 @@ CREATE TABLE IF NOT EXISTS scans (
   ip_hash TEXT
 );
 
-CREATE INDEX idx_scans_created ON scans(created_at DESC);
-CREATE INDEX idx_scans_verified ON scans(human_verified);
+CREATE INDEX IF NOT EXISTS idx_scans_created ON scans(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_scans_verified ON scans(human_verified);
 ```
 
 ---
 
 ## human.tech Integration (BONUS Track)
 
-Integration approach:
 1. After a scan completes, user clicks "Attest as Human"
-2. Redirect to human.tech verification flow (or embed their widget)
-3. User proves personhood via ZK proof (no biometrics shared)
-4. On success, we store the proof hash + mark scan as human-verified
-5. Verified scans show a "✓ Verified by Human" badge
+2. Redirect to human.tech verification flow
+3. User proves personhood via ZK proof (no biometrics shared, no identity revealed)
+4. On success, proof hash stored + scan marked as human-verified
+5. Verified scans show "✓ Verified by Human" badge
 
-This addresses a real problem: **Who watches the watchmen?** If AI safety evals can be run AND faked by AI, the evaluations themselves become untrustworthy. Human attestation via ZK proofs closes that loop.
+**Why this matters**: If AI safety evals can be run AND faked by AI, the evaluations themselves become untrustworthy. Human attestation via ZK proofs closes that loop.
+
+---
+
+## Test Suite
+
+```bash
+bun run test          # All 40 tests
+bun run test:unit     # 27 unit tests (scoring, constants, prompt quality)
+bun run test:integration  # 13 integration tests (HF model availability, adversarial)
+```
+
+- `predeploy` hook runs full test suite before every deploy
+- Integration tests verify all 4 HF models respond, follow system prompts, handle adversarial input
+
+---
+
+## Status
+
+- ✅ Multi-model architecture (5 models, 2 providers)
+- ✅ @huggingface/inference SDK integration
+- ✅ 40 adversarial probes across 5 categories
+- ✅ GPT-5.4 LLM-as-Judge for all verdicts
+- ✅ Per-model scoring (no misleading aggregates)
+- ✅ Dual scoring: Model Resilience + Prompt Strength
+- ✅ Input analysis: prompt quality heuristic + LLM threat classifier
+- ✅ Report page: per-model cards with inline evidence for failures
+- ✅ Dashboard: per-model scores/ratings/checks in scan table
+- ✅ Human attestation via human.tech ZK proofs
+- ✅ 40 tests via Vitest (27 unit + 13 integration)
+- ✅ Deployed to Cloudflare Workers
+- ✅ Full documentation: README, JSON schema, probe library, example report
 
 ### Research Backing
 

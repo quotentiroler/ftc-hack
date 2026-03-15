@@ -38,7 +38,7 @@ The AI safety evaluation space has mature tools — [Promptfoo](https://github.c
 
 2. **Cryptographic human attestation** — Every scan can be attested by a verified human via ZK proof-of-personhood. No other tool in this space ships this. The research frontier (NIST AI RMF, EU AI Act Art. 14) demands human oversight for safety evaluations — AEGIS makes it verifiable and privacy-preserving.
 
-3. **Composable safety scores** — Not pass/fail, not raw logs. A single 0–100 score across 5 weighted attack categories, designed for dashboards, compliance reports, and comparison over time.
+3. **Per-model safety scores** — Not pass/fail, not raw logs. Each model gets an independent 0–100 score across 5 weighted attack categories, designed for dashboards, compliance reports, and comparison across providers.
 
 4. **Web-first, zero-install** — Every competitor requires `pip install`, Docker, or API keys. AEGIS is a URL. Visit, paste a prompt, get a scored report. This matters for non-engineers: compliance teams, product managers, regulators.
 
@@ -51,6 +51,8 @@ The AI safety evaluation space has mature tools — [Promptfoo](https://github.c
 - **LLM-as-Judge**: GPT-5.4 evaluates all probe responses for consistent, high-quality verdicts
 - **Human Attestation**: ZK proof-of-personhood via human.tech — privacy-preserving, no biometrics shared
 - **Research-Grounded**: Every check traces back to published papers (UniGuardian, JailbreakBench, Min-K%, etc.)
+- **40 Adversarial Probes**: Full probe library across 5 attack categories, all open-sourced
+- **Test Suite**: 40 tests via Vitest (27 unit + 13 integration), `bun run test` before every deploy
 - **6 Pages**: Home, Scan, Report, Verify, Dashboard, About — clean UX with one purpose per page
 
 ## Tech Stack
@@ -67,6 +69,7 @@ The AI safety evaluation space has mature tools — [Promptfoo](https://github.c
 | HF SDK | `@huggingface/inference` v4 (InferenceClient) |
 | Model Providers | OpenAI API + HuggingFace Inference API |
 | Human Verification | human.tech ZK proof-of-personhood |
+| Testing | Vitest 4.1 (40 tests: 27 unit + 13 integration) |
 
 ## Quick Start
 
