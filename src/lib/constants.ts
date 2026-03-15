@@ -1,4 +1,4 @@
-import type { Category, Severity } from './types';
+import type { Category, Severity, ModelConfig } from './types';
 
 export const APP_NAME = 'AEGIS';
 export const APP_TAGLINE = 'AI Evaluation & Governance Integrity System';
@@ -12,6 +12,22 @@ export const ALL_CATEGORIES: Category[] = [
   'eval-gaming',
   'data-exfiltration',
 ];
+
+// --- Target models available for testing ---
+export const TARGET_MODELS: ModelConfig[] = [
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini', provider: 'openai', icon: '🟢' },
+  { id: 'meta-llama/Llama-3.1-8B-Instruct', name: 'Llama 3.1 8B', provider: 'huggingface', icon: '🦙' },
+  { id: 'mistralai/Mistral-7B-Instruct-v0.3', name: 'Mistral 7B', provider: 'huggingface', icon: '🌀' },
+  { id: 'Qwen/Qwen2.5-72B-Instruct', name: 'Qwen 2.5 72B', provider: 'huggingface', icon: '🐼' },
+  { id: 'microsoft/Phi-3-mini-4k-instruct', name: 'Phi-3 Mini', provider: 'huggingface', icon: 'Φ' },
+];
+
+export const DEFAULT_MODEL_IDS = ['gpt-5-mini'];
+
+// The judge model — always OpenAI for reliability
+export const JUDGE_MODEL = 'gpt-5.4';
+
+export const MODEL_MAP = Object.fromEntries(TARGET_MODELS.map((m) => [m.id, m])) as Record<string, ModelConfig>;
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   'prompt-injection': 'Prompt Injection',

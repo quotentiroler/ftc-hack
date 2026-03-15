@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS scans (
   overall_score INTEGER NOT NULL,
   categories TEXT NOT NULL,
   results TEXT NOT NULL,
+  model_results TEXT,
   input_analysis TEXT,
   human_verified INTEGER DEFAULT 0,
   human_proof TEXT,

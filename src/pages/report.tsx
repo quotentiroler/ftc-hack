@@ -4,7 +4,7 @@ import { Layout } from '../components/layout';
 import { ScoreRing, PassFailBadge, ScoreBadge } from '../components/score-badge';
 import { HumanBadge } from '../components/human-badge';
 import type { ScanResult } from '../lib/types';
-import { CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/constants';
+import { CATEGORY_LABELS, CATEGORY_ICONS, getScoreColor } from '../lib/constants';
 
 export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => {
   const isCritical = scan.overallScore < 40;
@@ -68,6 +68,65 @@ export const ReportPage: FC<{ scan: ScanResult }> = ({ scan }) => {
         <pre class="code-block">{scan.targetValue}</pre>
       </div>
     </section>
+
+    {/* Multi-model comparative scorecard */}
+    {scan.modelResults && scan.modelResults.length > 1 && (
+      <section class="section">
+        <div class="container">
+          <h2>🏁 Multi-Model Comparison</h2>
+          <p class="text-muted text-sm" style="margin-bottom:1rem;">
+            Your system prompt was tested against {scan.modelResults.length} models. The overall score above reflects the primary model.
+          </p>
+          <div class="model-scorecard">
+            {scan.modelResults.map((mr) => (
+              <div class={`model-score-row ${mr.error ? 'model-error' : ''}`} key={mr.modelId}>
+                <div class="model-score-info">
+                  <span class="model-score-name">{mr.modelName}</span>
+                  <span class={`provider-tag provider-${mr.provider}`}>
+                    {mr.provider === 'openai' ? 'OpenAI' : 'HuggingFace'}
+                  </span>
+                </div>
+                {mr.error ? (
+                  <div class="model-score-error">
+                    <span class="badge badge-fail">ERROR</span>
+                    <span class="text-muted text-sm">{mr.error.slice(0, 80)}</span>
+                  </div>
+                ) : (
+                  <div class="model-score-visual">
+                    <div class="model-score-bar-track">
+                      <div
+                        class="model-score-bar-fill"
+                        style={`width:${mr.overallScore}%;background:${getScoreColor(mr.overallScore)}`}
+                      />
+                    </div>
+                    <span class="model-score-value" style={`color:${getScoreColor(mr.overallScore)}`}>
+                      {mr.overallScore}
+                    </span>
+                    <span class="model-score-checks">
+                      {mr.results.filter((r) => r.passed).length}/{mr.results.length} passed
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    {/* Single model badge if only one model with no multi-model data */}
+    {scan.modelResults && scan.modelResults.length === 1 && (
+      <section class="section">
+        <div class="container">
+          <p class="text-muted text-sm" style="margin:0;">
+            Tested against: <strong>{scan.modelResults[0].modelName}</strong>
+            <span class={`provider-tag provider-${scan.modelResults[0].provider}`} style="margin-left:0.5rem;">
+              {scan.modelResults[0].provider === 'openai' ? 'OpenAI' : 'HuggingFace'}
+            </span>
+          </p>
+        </div>
+      </section>
+    )}
 
     {/* Prompt quality warning */}
     {scan.inputAnalysis?.promptQuality.warning && (

@@ -6,12 +6,12 @@ import { ReportPage } from './pages/report';
 import { VerifyPage } from './pages/verify';
 import { DashboardPage } from './pages/dashboard';
 import { AboutPage } from './pages/about';
-import { runSafetyChecks, analyzeInput } from './lib/safety-checks';
+import { runMultiModelChecks, analyzeInput } from './lib/safety-checks';
 import { calculateOverallScore } from './lib/scoring';
 import { generateDemoProof } from './lib/human-verify';
 import { globalErrorHandler, globalNotFoundHandler } from './lib/errors';
-import type { Category, ScanResult, ScanRow, AppEnv, InputAnalysis } from './lib/types';
-import { ALL_CATEGORIES } from './lib/constants';
+import type { Category, ScanResult, ScanRow, AppEnv, InputAnalysis, ModelResult } from './lib/types';
+import { ALL_CATEGORIES, DEFAULT_MODEL_IDS, MODEL_MAP } from './lib/constants';
 
 const app = new Hono<AppEnv>();
 
@@ -28,6 +28,7 @@ function rowToScan(row: ScanRow): ScanResult {
     overallScore: row.overall_score,
     categories: JSON.parse(row.categories),
     results: JSON.parse(row.results),
+    modelResults: row.model_results ? JSON.parse(row.model_results) as ModelResult[] : undefined,
     inputAnalysis: row.input_analysis ? JSON.parse(row.input_analysis) as InputAnalysis : undefined,
     humanVerified: row.human_verified === 1,
     humanProof: row.human_proof ?? undefined,
@@ -105,28 +106,54 @@ app.post('/api/scan', async (c) => {
       (ALL_CATEGORIES as readonly string[]).includes(c),
     );
 
-    const apiKey = c.env.OPENAI_API_KEY;
-    if (!apiKey) return c.text('OPENAI_API_KEY not configured', 500);
+    // Parse selected models (default to GPT-5 Mini)
+    const rawModels = body['models'];
+    let modelIds: string[];
+    if (Array.isArray(rawModels)) {
+      modelIds = rawModels.map(String).filter((id) => MODEL_MAP[id]);
+    } else if (typeof rawModels === 'string') {
+      modelIds = MODEL_MAP[rawModels] ? [rawModels] : [...DEFAULT_MODEL_IDS];
+    } else {
+      modelIds = [...DEFAULT_MODEL_IDS];
+    }
+    if (modelIds.length === 0) modelIds = [...DEFAULT_MODEL_IDS];
+
+    const apiKeys = {
+      openaiKey: c.env.OPENAI_API_KEY,
+      hfToken: c.env.HF_TOKEN ?? '',
+    };
+    if (!apiKeys.openaiKey) return c.text('OPENAI_API_KEY not configured', 500);
+
+    // Check if HF models selected but no token
+    const needsHf = modelIds.some((id) => MODEL_MAP[id]?.provider === 'huggingface');
+    if (needsHf && !apiKeys.hfToken) return c.text('HF_TOKEN not configured — cannot test HuggingFace models', 500);
 
     // Analyze input quality + threat classification
-    const inputAnalysis = await analyzeInput(target, apiKey);
+    const inputAnalysis = await analyzeInput(target, apiKeys);
 
-    // Run safety checks (system prompt resilience probes)
-    const results = await runSafetyChecks(target, categories, apiKey);
-    const overallScore = calculateOverallScore(results);
+    // Run multi-model safety checks
+    const modelResults = await runMultiModelChecks(target, categories, modelIds, apiKeys);
+
+    // Primary results = first model (for backward compat)
+    const primary = modelResults[0];
+    const overallScore = primary?.overallScore ?? 0;
+    const results = primary?.results ?? [];
 
     // Generate scan ID
     const id = crypto.randomUUID();
 
     // Store in D1
     await c.env.DB.prepare(
-      `INSERT INTO scans (id, target_type, target_value, overall_score, categories, results, input_analysis)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO scans (id, target_type, target_value, overall_score, categories, results, model_results, input_analysis)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-      .bind(id, 'prompt', target, overallScore, JSON.stringify(categories), JSON.stringify(results), JSON.stringify(inputAnalysis))
+      .bind(
+        id, 'prompt', target, overallScore,
+        JSON.stringify(categories), JSON.stringify(results),
+        JSON.stringify(modelResults), JSON.stringify(inputAnalysis),
+      )
       .run();
 
-    // Return JSON for fetch requests, redirect for normal form POSTs
     // Auto-redirect to verify page for critical/risky scans (<60) to nudge attestation
     const destination = overallScore < 60 ? `/verify/${id}` : `/report/${id}`;
     const wantsJson = (c.req.header('accept') ?? '').includes('application/json');

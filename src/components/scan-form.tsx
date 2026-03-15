@@ -1,6 +1,6 @@
 /** @jsxImportSource hono/jsx */
 import type { FC } from 'hono/jsx';
-import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_ICONS } from '../lib/constants';
+import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_ICONS, TARGET_MODELS, DEFAULT_MODEL_IDS } from '../lib/constants';
 import { html } from 'hono/html';
 
 export const ScanForm: FC = () => (
@@ -23,6 +23,29 @@ export const ScanForm: FC = () => (
           Try an example system prompt
         </button>
       </div>
+
+      <fieldset class="form-group">
+        <legend>Target Models to Test</legend>
+        <p class="text-muted text-sm" style="margin-bottom:0.3rem;">
+          Select which models to evaluate your system prompt against. Open-weight models are tested via HuggingFace Inference API.
+        </p>
+        <div class="checkbox-grid">
+          {TARGET_MODELS.map((model) => (
+            <label class="checkbox-label" key={model.id}>
+              <input
+                type="checkbox"
+                name="models"
+                value={model.id}
+                checked={DEFAULT_MODEL_IDS.includes(model.id)}
+              />
+              <span>{model.icon} {model.name}</span>
+              <span class={`provider-tag provider-${model.provider}`}>
+                {model.provider === 'openai' ? 'OpenAI' : 'HF'}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
 
       <fieldset class="form-group">
         <legend>Attack Categories to Test</legend>
@@ -57,7 +80,7 @@ export const ScanForm: FC = () => (
 
       <div class="scan-loading-meta">
         <span id="scan-timer" class="scan-timer">0s elapsed</span>
-        <span class="scan-loading-hint">Usually takes 20–40 seconds</span>
+        <span class="scan-loading-hint">Time depends on number of models selected</span>
       </div>
 
       <div id="scan-probes-live" class="scan-probes-live"></div>

@@ -39,13 +39,33 @@ export interface CheckResult {
   reference: string;
 }
 
+// Multi-model support
+export type ModelProvider = 'openai' | 'huggingface';
+
+export interface ModelConfig {
+  id: string;            // e.g. 'gpt-5-mini', 'meta-llama/Llama-3.1-8B-Instruct'
+  name: string;          // Display name
+  provider: ModelProvider;
+  icon: string;          // Emoji icon
+}
+
+export interface ModelResult {
+  modelId: string;
+  modelName: string;
+  provider: ModelProvider;
+  overallScore: number;
+  results: CheckResult[];
+  error?: string;        // If the model failed entirely
+}
+
 export interface ScanResult {
   id: string;
   targetType: TargetType;
   targetValue: string;
-  overallScore: number;
+  overallScore: number;         // Best/primary model score (backward compat)
   categories: Category[];
-  results: CheckResult[];
+  results: CheckResult[];       // Primary model results (backward compat)
+  modelResults?: ModelResult[]; // Per-model breakdown
   inputAnalysis?: InputAnalysis;
   humanVerified: boolean;
   humanProof?: string;
@@ -59,8 +79,9 @@ export interface ScanRow {
   target_type: string;
   target_value: string;
   overall_score: number;
-  categories: string;   // JSON
-  results: string;      // JSON
+  categories: string;        // JSON
+  results: string;           // JSON
+  model_results: string | null; // JSON
   input_analysis: string | null; // JSON
   human_verified: number;
   human_proof: string | null;
@@ -73,6 +94,7 @@ export interface ScanRow {
 export type AppBindings = {
   DB: D1Database;
   OPENAI_API_KEY: string;
+  HF_TOKEN: string;
 };
 
 // Hono Env type — used by the Hono app and all route handlers

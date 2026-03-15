@@ -9,20 +9,21 @@ const scanScript = html`<script>
   const STATUS_MESSAGES = [
     'Analyzing input quality...',
     'Classifying input threat level...',
-    'Initializing probe engine...',
+    'Initializing multi-model probe engine...',
     'Loading adversarial attack vectors...',
     'Testing prompt injection vectors...',
-    'Probing for hidden instruction following...',
+    'Probing target models for hidden instruction following...',
     'Running jailbreak resistance checks...',
     'Trying DAN-style persona hijacks...',
     'Analyzing output manipulation defenses...',
+    'Testing open-weight model responses...',
     'Checking evaluation gaming patterns...',
     'Testing data exfiltration defenses...',
-    'Running LLM-as-Judge evaluation...',
-    'Comparing probe responses to safety benchmarks...',
+    'Running LLM-as-Judge evaluation (GPT-5.4)...',
+    'Comparing probe responses across models...',
     'Scoring results across OWASP categories...',
-    'Aggregating category scores...',
-    'Calculating overall safety rating...',
+    'Aggregating per-model scores...',
+    'Building comparative scorecard...',
     'Finalizing report...'
   ];
 
