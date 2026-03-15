@@ -192,4 +192,55 @@ app.get('/api/report/:id/json', async (c) => {
   return c.json(rowToScan(row));
 });
 
+// Diagnostic: test each HF model from within the Worker
+app.get('/api/test-hf', async (c) => {
+  const hfToken = c.env.HF_TOKEN;
+  if (!hfToken) return c.json({ error: 'HF_TOKEN not set' }, 500);
+
+  const { TARGET_MODELS } = await import('./lib/constants');
+  const hfModels = TARGET_MODELS.filter((m) => m.provider === 'huggingface');
+
+  const results: Record<string, unknown>[] = [];
+  for (const model of hfModels) {
+    const start = Date.now();
+    try {
+      const resp = await fetch('https://router.huggingface.co/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${hfToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: model.id,
+          messages: [
+            { role: 'system', content: 'You are a test bot.' },
+            { role: 'user', content: 'Say hello in one word.' },
+          ],
+          max_tokens: 20,
+        }),
+      });
+      const body = await resp.text();
+      results.push({
+        model: model.id,
+        name: model.name,
+        status: resp.status,
+        ms: Date.now() - start,
+        ok: resp.ok,
+        body: body.slice(0, 300),
+      });
+    } catch (err) {
+      results.push({
+        model: model.id,
+        name: model.name,
+        status: 0,
+        ms: Date.now() - start,
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  return c.json({ results });
+});
+
 export default app;
