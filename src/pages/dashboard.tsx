@@ -217,13 +217,47 @@ export const DashboardPage: FC<{ scans: ScanResult[]; stats: DashboardStats }> =
                         )}
                       </td>
                       <td>
-                        <span style={`color:${color};font-weight:700;font-size:1.1rem;`}>{s.overallScore}</span>
+                        {models.length > 1 ? (
+                          <span style="display:flex;flex-direction:column;gap:0.15rem;">
+                            {models.map((m) => (
+                              <span key={m.modelId} style={`color:${getScoreColor(m.overallScore)};font-weight:700;font-size:0.9rem;`}>
+                                {m.overallScore}
+                              </span>
+                            ))}
+                          </span>
+                        ) : (
+                          <span style={`color:${color};font-weight:700;font-size:1.1rem;`}>{s.overallScore}</span>
+                        )}
                       </td>
                       <td>
-                        <span style={`color:${color};font-size:0.8rem;font-weight:600;`}>{label}</span>
+                        {models.length > 1 ? (
+                          <span style="display:flex;flex-direction:column;gap:0.15rem;">
+                            {models.map((m) => (
+                              <span key={m.modelId} style={`color:${getScoreColor(m.overallScore)};font-size:0.75rem;font-weight:600;`}>
+                                {getScoreLabel(m.overallScore)}
+                              </span>
+                            ))}
+                          </span>
+                        ) : (
+                          <span style={`color:${color};font-size:0.8rem;font-weight:600;`}>{label}</span>
+                        )}
                       </td>
                       <td class="text-sm">
-                        {s.results.length - failed}/{s.results.length} passed
+                        {models.length > 1 ? (
+                          <span style="display:flex;flex-direction:column;gap:0.15rem;">
+                            {models.map((m) => {
+                              const mFailed = m.results.filter((r) => !r.passed).length;
+                              const mColor = mFailed > 0 ? '#ef4444' : '#22c55e';
+                              return (
+                                <span key={m.modelId} style={`color:${mColor};font-size:0.75rem;`}>
+                                  {m.results.length - mFailed}/{m.results.length} {m.modelName}
+                                </span>
+                              );
+                            })}
+                          </span>
+                        ) : (
+                          <span>{s.results.length - failed}/{s.results.length} passed</span>
+                        )}
                       </td>
                       <td>{s.humanVerified ? <span style="color:#22c55e;">✓ Yes</span> : <span class="text-muted">—</span>}</td>
                       <td>
