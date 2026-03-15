@@ -19,27 +19,55 @@ export const AboutPage: FC = () => (
         <h2>Architecture</h2>
         <div class="arch-diagram">
           <div class="arch-row">
-            <div class="arch-box">User submits prompt</div>
+            <div class="arch-box">User submits prompt + selects models</div>
             <div class="arch-arrow">→</div>
-            <div class="arch-box highlight">AEGIS Safety Engine</div>
+            <div class="arch-box highlight">AEGIS Multi-Model Engine</div>
             <div class="arch-arrow">→</div>
-            <div class="arch-box">Report with scores</div>
+            <div class="arch-box">Comparative report</div>
           </div>
           <div class="arch-row">
-            <div class="arch-box">5 Check Categories</div>
+            <div class="arch-box">5 Check Categories × 40 probes</div>
             <div class="arch-arrow">→</div>
-            <div class="arch-box highlight">OpenAI API probes</div>
+            <div class="arch-box highlight">OpenAI + HuggingFace APIs</div>
             <div class="arch-arrow">→</div>
-            <div class="arch-box">Risk scoring (0-100)</div>
+            <div class="arch-box">GPT-5.4 LLM-as-Judge</div>
           </div>
           <div class="arch-row">
-            <div class="arch-box">Human reviewer</div>
+            <div class="arch-box">Dual scoring (Resilience + Prompt Strength)</div>
             <div class="arch-arrow">→</div>
             <div class="arch-box highlight">human.tech ZK proof</div>
             <div class="arch-arrow">→</div>
             <div class="arch-box">Attested report ✓</div>
           </div>
         </div>
+
+        <h3 style="margin-top:2rem">Multi-Model Comparative Testing</h3>
+        <p>
+          AEGIS tests your system prompt against multiple LLMs simultaneously via the
+          {' '}<strong>@huggingface/inference</strong> SDK and OpenAI API, producing a side-by-side
+          safety scorecard. Currently supported models:
+        </p>
+        <ul class="spaced-list">
+          <li>🟢 <strong>GPT-5 Mini</strong> — OpenAI (proprietary, RLHF-aligned)</li>
+          <li>🦙 <strong>Llama 3.3 70B</strong> — Meta (open-weight, 70B params)</li>
+          <li>🐋 <strong>DeepSeek V3.2</strong> — DeepSeek (open-weight, 685B MoE)</li>
+          <li>🐼 <strong>Qwen 2.5 72B</strong> — Alibaba (open-weight, 72B params)</li>
+          <li>💻 <strong>Qwen 2.5 Coder 32B</strong> — Alibaba (code-specialized, 32B params)</li>
+        </ul>
+        <p class="text-sm text-muted">
+          Each model is independently probed and judged — GPT-5.4 serves as the impartial
+          LLM-as-judge, evaluating whether each probe succeeded or was resisted.
+        </p>
+
+        <h3 style="margin-top:2rem">Tech Stack</h3>
+        <ul class="spaced-list">
+          <li><strong>Runtime:</strong> Cloudflare Workers + Hono (edge-deployed, &lt;20ms cold start)</li>
+          <li><strong>Database:</strong> Cloudflare D1 (SQLite at the edge)</li>
+          <li><strong>AI Providers:</strong> OpenAI SDK v6 + @huggingface/inference SDK</li>
+          <li><strong>Judge Model:</strong> GPT-5.4 (LLM-as-judge for all verdicts)</li>
+          <li><strong>Testing:</strong> Vitest 4.1 — 40 tests (unit + live integration)</li>
+          <li><strong>Attestation:</strong> human.tech ZK proof-of-personhood</li>
+        </ul>
       </div>
     </section>
 
