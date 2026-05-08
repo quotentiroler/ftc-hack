@@ -29,7 +29,7 @@ export const HomePage: FC<{ totalScans: number; threats: number }> = ({
       <div class="container">
         <div class="grid-3">
           <div class="card">
-            <div class="card-icon">🔍</div>
+            <div class="card-icon">📚</div>
             <h3>Detect</h3>
             <p>
               5 attack categories grounded in peer-reviewed research — from UniGuardian's prompt trigger
@@ -45,7 +45,7 @@ export const HomePage: FC<{ totalScans: number; threats: number }> = ({
             </p>
           </div>
           <div class="card">
-            <div class="card-icon">�</div>
+            <div class="card-icon">📚</div>
             <h3>Cite</h3>
             <p>
               Every probe traces to a peer-reviewed paper — UniGuardian, JailbreakBench, HarmBench,
